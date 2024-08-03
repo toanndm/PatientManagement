@@ -15,8 +15,9 @@ namespace PatientManagement.Infrastructure
     {
         public static void ConfigureInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            var connectionString = configuration.GetConnectionString("SqlServer");
-            services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(connectionString));
+            var connectionString = configuration.GetConnectionString("Postgresql");
+            services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
+
             services.AddScoped<IPatientRepository, PatientRepository>();
         }
     }
