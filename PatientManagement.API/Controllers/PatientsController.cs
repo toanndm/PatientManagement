@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PatientManagement.Application.DTOs;
 using PatientManagement.Application.Services;
+using PatientManagement.Application.Utils;
 
 namespace PatientManagement.API.Controllers
 {
@@ -32,6 +33,10 @@ namespace PatientManagement.API.Controllers
             }
             catch (ApplicationException ex)
             {
+                if (ex.InnerException is DuplicateException)
+                {
+                    return Conflict(ex.InnerException.Message);
+                }
                 return BadRequest(ex.Message);
             }
         }
@@ -60,8 +65,8 @@ namespace PatientManagement.API.Controllers
             }
         }
 
-        // PUT: api/Patients/Deactivate/{id}
-        [HttpPut("Deactivate/{id}")]
+        // PATCH: api/Patients/Deactivate/{id}
+        [HttpPatch("Deactivate/{id}")]
         public async Task<IActionResult> DeactivatePatient(Guid id, [FromBody] string reason)
         {
             if (string.IsNullOrWhiteSpace(reason))
@@ -83,14 +88,51 @@ namespace PatientManagement.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-        // GET: api/Patients
-        [HttpGet]
-        public async Task<IActionResult> GetAllPatients()
+        
+        // PATCH: api/Patients/Deactivate/{id}
+        [HttpPatch("Activate/{id}")]
+        public async Task<IActionResult> ActivatePatient(Guid id)
         {
             try
             {
-                var patients = await _patientAppService.GetAll();
+                await _patientAppService.ActivatePatientAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // GET: api/Patients
+        [HttpGet]
+        public async Task<IActionResult> GetAllPatients(int pageNumber = 1, int pageSize = 5)
+        {
+            try
+            {
+                if (pageNumber <= 0) pageNumber = 1;
+                if (pageSize <= 0) pageSize = 10;
+
+                var patients = await _patientAppService.GetAllAsync(pageNumber, pageSize);
+                return Ok(patients);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        
+        // GET: api/Patients/NoPaged
+        [HttpGet("NoPaged")]
+        public async Task<IActionResult> GetAllPatientsNoPaged()
+        {
+            try
+            {
+                var patients = await _patientAppService.GetAllNoPagedAsync();
                 return Ok(patients);
             }
             catch (ApplicationException ex)

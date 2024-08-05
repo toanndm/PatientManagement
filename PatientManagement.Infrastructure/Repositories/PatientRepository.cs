@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using PatientManagement.Application.DTOs;
 using PatientManagement.Application.Repositories;
 using PatientManagement.Domain.Entities;
 using System;
@@ -32,13 +33,43 @@ namespace PatientManagement.Infrastructure.Repositories
             }
         }
 
-        public async Task<List<Patient>> GetAllAsync()
+        public async Task<PagedResultDto<Patient>> GetAllAsync(int pageNumber, int pageSize)
+        {
+            try
+            {
+                if (pageNumber <= 0) pageNumber = 1;
+                if (pageSize <= 0) pageSize = 10;
+
+                var skip = (pageNumber - 1) * pageSize;
+                var take = pageSize;
+                var totalCount = await _context.Patients.CountAsync();
+
+                var patients = await _context.Patients
+                    .Skip(skip)
+                    .Take(take)
+                    .ToListAsync();
+
+                return new PagedResultDto<Patient>
+                {
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalCount = totalCount,
+                    Items = patients
+                };
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<List<Patient>> GetAllNoPagedAsync()
         {
             try
             {
                 return await _context.Patients.ToListAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw;
             }

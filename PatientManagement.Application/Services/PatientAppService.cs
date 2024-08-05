@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using PatientManagement.Application.DTOs;
 using PatientManagement.Application.Repositories;
+using PatientManagement.Application.Utils;
 using PatientManagement.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -26,7 +27,7 @@ namespace PatientManagement.Application.Services
             {
                 if (await IsDuplicatePatientAsync(input))
                 {
-                    throw new ApplicationException("Duplicate patient found.");
+                    throw new DuplicateException("Duplicate patient found.");
                 }
 
                 return await _patientRepository.InsertAsync(_mapper.Map<PatientDto, Patient>(input));
@@ -58,11 +59,43 @@ namespace PatientManagement.Application.Services
             }
         }
 
-        public async Task<List<Patient>> GetAll()
+        public async Task ActivatePatientAsync(Guid id)
         {
             try
             {
-                return await _patientRepository.GetAllAsync();
+                var patient = await _patientRepository.GetAsync(id);
+                if (patient == null)
+                {
+                    throw new KeyNotFoundException("Patient not found.");
+                }
+
+                patient.IsActive = true;
+
+                await _patientRepository.UpdateAsync(patient);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("An error occurred while deactivating the patient.", ex);
+            }
+        }
+
+        public async Task<PagedResultDto<Patient>> GetAllAsync(int pageNumber, int pageSize)
+        {
+            try
+            {
+                return await _patientRepository.GetAllAsync(pageNumber, pageSize);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("An error occurred while retrieving all patients.", ex);
+            }
+        }
+        
+        public async Task<List<Patient>> GetAllNoPagedAsync()
+        {
+            try
+            {
+                return await _patientRepository.GetAllNoPagedAsync();
             }
             catch (Exception ex)
             {
@@ -92,11 +125,11 @@ namespace PatientManagement.Application.Services
         {
             try
             {
-                var patients = await _patientRepository.GetAllAsync();
+                var patients = await _patientRepository.GetAllNoPagedAsync();
                 return patients.Any(p =>
                     p.FirstName.Equals(input.FirstName, StringComparison.OrdinalIgnoreCase) &&
                     p.LastName.Equals(input.LastName, StringComparison.OrdinalIgnoreCase) &&
-                    p.Phone.Equals(input.Phone, StringComparison.OrdinalIgnoreCase) &&
+                    p.Gender == input.Gender &&
                     p.DateOfBirth == input.DateOfBirth);
             }
             catch (Exception ex)

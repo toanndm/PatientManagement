@@ -13,8 +13,10 @@ namespace PatientManagement.Application.Services
         Task<Patient> CreatePatientAsync(PatientDto input);
         Task<Patient> UpdatePatientAsync(Guid id, PatientDto input);
         Task DeactivatePatientAsync(Guid id, string reason);
+        Task ActivatePatientAsync(Guid id);
         Task<Patient> GetPatientByIdAsync(Guid id);
-        Task<List<Patient>> GetAll();
+        Task<PagedResultDto<Patient>> GetAllAsync(int pageNumber, int pageSize);
+        Task<List<Patient>> GetAllNoPagedAsync();
         Task<bool> IsDuplicatePatientAsync(PatientDto input);
     }
 }
